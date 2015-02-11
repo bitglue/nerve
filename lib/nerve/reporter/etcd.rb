@@ -39,36 +39,31 @@ class Nerve::Reporter
     end
 
     def ping?
-      if @full_key
-        etcd_save
-      else
-        @etcd.leader
-      end
+      @etcd.leader
     end
 
     private
 
     def etcd_delete
-      return unless @etcd and @full_key
+      return unless @etcd
       begin
-        @etcd.delete(@full_key)
+        @etcd.delete(@key)
       rescue ::Etcd::KeyNotFound
       rescue Errno::ECONNREFUSED
       end
     end
 
     def etcd_create
-      @full_key = @etcd.create_in_order(@key, :value => @data).key
-      log.info "Created etcd node path #{@full_key}"
+      @etcd.create(@key, value: @data).key
+      log.info "Created etcd node path #{@key}"
     end
 
     def etcd_save
-      return etcd_create unless @full_key
-      begin
-        @etcd.set(@key, :value => @data, :ttl => 30)
-      rescue ::Etcd::NotFile
-        etcd_create
-      end
+      #begin
+        @etcd.set(@key, value: @data, ttl: 30)
+      #rescue ::Etcd::NotFile
+      #  etcd_create
+      #end
     end
   end
 end
