@@ -66,7 +66,7 @@ class Nerve::Reporter
       return etcd_create unless @full_key
       begin
         @etcd.set(@key, :value => @data, :ttl => 30)
-      rescue ::Etcd::KeyNotFound
+      rescue ::Etcd::NotFile
         etcd_create
       end
     end
