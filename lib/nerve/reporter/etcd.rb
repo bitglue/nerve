@@ -13,6 +13,7 @@ class Nerve::Reporter
       @key = path.split('/').push(service['instance_id']).join('/')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
       @full_key = nil
+      @ttl = (service['check_interval'] || 0.5) * 5
     end
 
     def start()
@@ -42,9 +43,13 @@ class Nerve::Reporter
     end
 
     def ping?
-      pong = @etcd and !!@etcd.leader
-      log.info "ping? #{pong}"
-      pong
+      # we get a ping every check_interval; perform a save to keep the record
+      # alive, else the TTL will expire.
+      if @full_key
+        etcd_save
+      else
+        @etcd.leader
+      end
     end
 
     private
@@ -59,14 +64,14 @@ class Nerve::Reporter
     end
 
     def etcd_create
-      @full_key = @etcd.create_in_order(@key, :value => @data, :ttl => 30).key
-      log.info "registered at etcd path #{@full_key} with value #{@data}"
+      @full_key = @etcd.create_in_order(@key, :value => @data, :ttl => @ttl).key
+      log.info "registered at etcd path #{@full_key} with value #{@data}, TTL #{@ttl}"
     end
 
     def etcd_save
       return etcd_create unless @full_key
-      @etcd.set(@full_key, :value => @data, :ttl => 30)
-      log.info "updated etcd path #{@full_key} with value #{@data}"
+      @etcd.set(@full_key, :value => @data, :ttl => @ttl)
+      log.info "updated etcd path #{@full_key} with value #{@data}, TTL #{@ttl}"
     end
   end
 end
