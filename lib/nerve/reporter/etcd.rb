@@ -48,8 +48,8 @@ class Nerve::Reporter
     def etcd_delete
       return unless @etcd and @full_key
       begin
-        @etcd.delete(@key)
-      rescue ::Etcd::KeyNotFound
+        @etcd.delete(@full_key)
+      rescue ::Etcd::NotFile
       rescue Errno::ECONNREFUSED
       end
     end
