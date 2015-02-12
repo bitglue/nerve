@@ -27,6 +27,7 @@ class Nerve::Reporter
     end
 
     def report_up()
+      log.info "report_up"
       etcd_save
     end
 
@@ -35,12 +36,15 @@ class Nerve::Reporter
     end
 
     def update_data(new_data='')
+      log.info "update_data: #{new_data}"
       @data = parse_data(new_data)
       etcd_save
     end
 
     def ping?
-      @etcd and !!@etcd.leader
+      pong = @etcd and !!@etcd.leader
+      log.info "ping? #{pong}"
+      pong
     end
 
     private
