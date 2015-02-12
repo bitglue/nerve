@@ -14,6 +14,7 @@ class Nerve::Reporter
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
       @full_key = nil
       @ttl = (service['check_interval'] || 0.5) * 5
+      log.info "nerve: ttl is #{@ttl} (#{@ttl.class})"
     end
 
     def start()
