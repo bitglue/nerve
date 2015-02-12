@@ -12,12 +12,13 @@ class Nerve::Reporter
       path = service['etcd_path'] || '/'
       @key = path.split('/').push(service['instance_id']).join('/')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
+      @full_key = nil
     end
 
     def start()
-      log.info "nerve: waiting to connect to etcd at #{@path}"
+      log.info "nerve: connecting to etcd at #{@host}:#{@port}"
       @etcd = ::Etcd.client(:host => @host, :port => @port)
-      log.info "nerve: successfully created etcd connection to #{@key}"
+      log.info "nerve: successfully created etcd connection to #{@host}:#{@port}"
     end
 
     def stop()
@@ -39,13 +40,13 @@ class Nerve::Reporter
     end
 
     def ping?
-      @etcd.leader
+      @etcd and !!@etcd.leader
     end
 
     private
 
     def etcd_delete
-      return unless @etcd
+      return unless @etcd and @full_key
       begin
         @etcd.delete(@key)
       rescue ::Etcd::KeyNotFound
@@ -54,16 +55,13 @@ class Nerve::Reporter
     end
 
     def etcd_create
-      @etcd.create(@key, value: @data).key
-      log.info "Created etcd node path #{@key}"
+      @full_key = @etcd.create_in_order(@key, value: @data).key
+      log.info "registered at etcd path #{@full_key}"
     end
 
     def etcd_save
-      #begin
-        @etcd.set(@key, value: @data, ttl: 30)
-      #rescue ::Etcd::NotFile
-      #  etcd_create
-      #end
+      return etcd_create unless @full_key
+      @etcd.set(@full_key, :value => @data, :ttl => 30)
     end
   end
 end
