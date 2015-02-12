@@ -55,13 +55,14 @@ class Nerve::Reporter
     end
 
     def etcd_create
-      @full_key = @etcd.create_in_order(@key, value: @data).key
-      log.info "registered at etcd path #{@full_key}"
+      @full_key = @etcd.create_in_order(@key, :value => @data).key
+      log.info "registered at etcd path #{@full_key} with value #{@data}"
     end
 
     def etcd_save
       return etcd_create unless @full_key
       @etcd.set(@full_key, :value => @data, :ttl => 30)
+      log.info "updated etcd path #{@full_key} with value #{@data}"
     end
   end
 end
